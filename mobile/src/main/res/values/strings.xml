@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">Auth2</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_add">Add</string>
+    <string name="copied">Copied.</string>
 
 </resources>
