@@ -42,11 +42,15 @@ public class TotpModel extends Model {
      *
      * @param uriString otpauth:// から始まるUri
      */
-    public TotpModel(String uriString) {
-        Uri uri = Uri.parse(uriString);
-        accountId = uri.getLastPathSegment();
-        issuer = uri.getQueryParameter("issuer");
-        secret = uri.getQueryParameter("secret");
+    public TotpModel(String uriString) throws IllegalArgumentException {
+        if (uriString.matches(".*/totp/.*")) {
+            Uri uri = Uri.parse(uriString);
+            accountId = uri.getLastPathSegment();
+            issuer = uri.getQueryParameter("issuer");
+            secret = uri.getQueryParameter("secret");
+        } else {
+            throw new IllegalArgumentException("this is not totp uri " + uriString);
+        }
     }
 
     /**

@@ -4,5 +4,7 @@
     <string name="app_name">Auth2</string>
     <string name="action_add">Add</string>
     <string name="copied">Copied.</string>
-
+    <string name="confirm_delete">Delete Token?</string>
+    <string name="cancel">Cancel</string>
+    <string name="error_uri">Sorry, TOTP Only</string>
 </resources>

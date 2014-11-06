@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.view.CardFragment;
+import android.support.wearable.view.CardFrame;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.support.wearable.view.WearableListView;
@@ -70,9 +71,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             public void onResult(DataItemBuffer dataItems) {
                 for (DataItem item : dataItems) {
                     try {
-                        String itemData = "[" + new String(item.getData()).split("\\[")[1];
-                        Log.d("Auth2", item.getUri().toString());
-                        JSONArray array = new JSONArray(itemData);
+                        // 先頭に変なゴミがついてるので除去
+                        String[] splits = new String(item.getData()).split("\\[");
+                        String jsonStr = "[" + splits[splits.length - 1];
+
+                        JSONArray array = new JSONArray(jsonStr);
+                        // JSONがうまくパースできたっぽいのでリスト消す
+                        adapter.clear();
+
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject json = array.getJSONObject(i);
                             adapter.add(new TotpModel(json.getString("accountid"), json.getString("secret"), json.getString("issuer")));
@@ -114,21 +120,34 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private class AuthListAdapter extends WearableListView.Adapter {
         private List<TotpModel> models = new ArrayList<>();
 
+        /**
+         * データを登録します
+         * @param model TOTPキー
+         */
         public void add(TotpModel model) {
             models.add(model);
             notifyItemInserted(getItemCount() - 1);
         }
 
+        /**
+         * リストをすべて消します
+         */
+        public void clear() {
+            models.clear();
+            notifyDataSetChanged();
+        }
+
         @Override
         public WearableListView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-            View v = LayoutInflater.from(MainActivity.this).inflate(android.R.layout.simple_list_item_1, viewGroup, false);
+            View v = LayoutInflater.from(MainActivity.this).inflate(R.layout.frame_key, viewGroup, false);
             return new ViewHolder(v);
         }
 
         @Override
         public void onBindViewHolder(WearableListView.ViewHolder viewHolder, int i) {
             TotpModel model = models.get(viewHolder.getPosition());
-            ((ViewHolder) viewHolder).textView.setText(model.accountId + " " + model.getAuthKey());
+            ((ViewHolder) viewHolder).account.setText(model.accountId);
+            ((ViewHolder) viewHolder).key.setText(model.getAuthKey());
         }
 
         @Override
@@ -136,12 +155,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             return models.size();
         }
 
-        private class ViewHolder extends WearableListView.ViewHolder {
-            public TextView textView;
+        public class ViewHolder extends WearableListView.ViewHolder {
+            public TextView account, key;
 
             public ViewHolder(View itemView) {
                 super(itemView);
-                textView = (TextView) itemView.findViewById(android.R.id.text1);
+                account = (TextView) itemView.findViewById(R.id.card_account);
+                key = (TextView) itemView.findViewById(R.id.card_authkey);
             }
         }
     }

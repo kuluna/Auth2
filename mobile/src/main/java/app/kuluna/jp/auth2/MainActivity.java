@@ -1,6 +1,5 @@
 package app.kuluna.jp.auth2;
 
-import android.annotation.TargetApi;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
@@ -42,9 +41,7 @@ import org.jdeferred.android.AndroidDeferredManager;
 import org.jdeferred.android.DeferredAsyncTask;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,23 +64,36 @@ public class MainActivity extends ActionBarActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        // 全件取得
-        List<TotpModel> datas = new Select().from(TotpModel.class).execute();
         cardAdapter = new CardAdapter(this);
-        cardAdapter.addAll(datas);
         recyclerView.setAdapter(cardAdapter);
 
-        // Android Wear用
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            googleApiClient = new GoogleApiClient.Builder(this).addApi(Wearable.API).build();
-        }
+
+        new AndroidDeferredManager().when(new DeferredAsyncTask<Void, Object, Void>() {
+            @Override
+            protected Void doInBackgroundSafe(Void... voids) throws Exception {
+                // 全件取得
+                List<TotpModel> datas = new Select().from(TotpModel.class).execute();
+                cardAdapter.addAll(datas);
+
+                return null;
+            }
+        }).done(new DoneCallback<Void>() {
+            @Override
+            public void onDone(Void result) {
+                // プログレスバーを消す
+                findViewById(R.id.progressbar).setVisibility(View.GONE);
+                // Android Wearと同期
+                updateWearData(MainActivity.this, cardAdapter.getModels());
+            }
+        });
     }
 
-    private Handler h = new Handler() {
+    /** 1分置きにキーを更新するHandler */
+    private Handler updateHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             // 1分後に再更新
-            h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+            updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
             cardAdapter.notifyDataSetChanged();
             Log.i("Auth2", "Key Updated.");
         }
@@ -92,76 +102,56 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        h.removeMessages(0);
-
-        // Android Wear用
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            if (googleApiClient != null && googleApiClient.isConnected()) {
-                googleApiClient.disconnect();
-            }
-        }
+        updateHandler.removeMessages(0);
     }
 
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
-        if (data != null) {
-            IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-            final TotpModel totpModel = new TotpModel(result.getContents());
-            if (totpModel.isOtpAuth()) {
-                // 問題なければ保存
-                totpModel.save();
-                // リストに追加
-                cardAdapter.add(totpModel);
+        switch (requestCode) {
+            case 0:
+            {
+                // 削除確認ダイアログでOKが押された時
+                if (resultCode == RESULT_OK) {
+                    int position = data.getIntExtra("position", -1);
+                    if (position != -1) {
+                        // 削除確認ダイアログでOKを押したらリストから消す
+                        cardAdapter.delete(position);
 
-
-                // Android Wear用
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && googleApiClient != null) {
-                    final ExecutorService executorService = Executors.newSingleThreadExecutor();
-                    new AndroidDeferredManager(executorService).when(new DeferredAsyncTask<Void, Object, Boolean>() {
-                        @Override
-                        protected Boolean doInBackgroundSafe(Void... voids) throws Exception {
-                            // この時点で接続切れてるのでもう一度つなぎにいく
-                            ConnectionResult conRes = googleApiClient.blockingConnect(30, TimeUnit.SECONDS);
-                            return conRes.isSuccess();
-                        }
-                    }).then(new DonePipe<Boolean, Boolean, Throwable, Object>() {
-                        @Override
-                        public Promise<Boolean, Throwable, Object> pipeDone(final Boolean result) {
-                            DeferredAsyncTask<Void, Object, Boolean> task = new DeferredAsyncTask<Void, Object, Boolean>() {
-                                @Override
-                                protected Boolean doInBackgroundSafe(Void... voids) throws Exception {
-                                    if (result) {
-                                        // Data Layerに書き込む
-                                        PutDataMapRequest dataMap = PutDataMapRequest.create("/auth2data");
-                                        dataMap.getDataMap().putString("Totp", cardAdapter.getModels().toString());
-                                        PutDataRequest request = dataMap.asPutDataRequest();
-                                        DataApi.DataItemResult res = Wearable.DataApi.putDataItem(googleApiClient, request).await();
-                                        return res.getStatus().isSuccess();
-                                    }
-                                    return false;
-                                }
-                            };
-                            task.executeOnExecutor(executorService);
-                            return task.promise();
-                        }
-                    }).done(new DoneCallback<Boolean>() {
-                        @Override
-                        public void onDone(Boolean result) {
-                            Log.i("Auth2", "Data send: " + result);
-                        }
-                    }).fail(new FailCallback<Throwable>() {
-                        @Override
-                        public void onFail(Throwable result) {
-                            result.printStackTrace();
-                        }
-                    });
+                        // Android Wearと同期
+                        updateWearData(this, cardAdapter.getModels());
+                    }
                 }
+                break;
+            }
+
+            default:
+            {
+                // QRコードアプリからQRコードを読み取った時
+                if (data != null) {
+                    IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+                    try {
+                        TotpModel totpModel = new TotpModel(result.getContents());
+                        if (totpModel.isOtpAuth()) {
+                            // 問題なければ保存
+                            totpModel.save();
+                            // リストに追加
+                            cardAdapter.add(totpModel);
+
+                            // Android Wearと同期
+                            updateWearData(this, cardAdapter.getModels());
+                        }
+                    } catch (IllegalArgumentException e) {
+                        Toast.makeText(this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
+                        Log.e("Auth2", getString(R.string.error_uri), e);
+                    }
+                }
+                break;
             }
         }
     }
@@ -184,19 +174,75 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
-    private void sendWear() {
+    /**
+     * TOTPデータをWearと同期させます(非同期)
+     *
+     * @param context アクティビティコンテキスト
+     * @param models TOTPモデルデータ
+     */
+    private void updateWearData(final Context context, final List<TotpModel> models) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            final ExecutorService executorService = Executors.newSingleThreadExecutor();
+            new AndroidDeferredManager(executorService).when(new DeferredAsyncTask<Void, Object, Boolean>() {
+                @Override
+                protected Boolean doInBackgroundSafe(Void... voids) throws Exception {
+                    // Google Play Serviceに接続
+                    googleApiClient = new GoogleApiClient.Builder(context).addApi(Wearable.API).build();
+                    ConnectionResult conRes = googleApiClient.blockingConnect(30, TimeUnit.SECONDS);
 
+                    return conRes.isSuccess();
+                }
+            }).then(new DonePipe<Boolean, Boolean, Throwable, Object>() {
+                @Override
+                public Promise<Boolean, Throwable, Object> pipeDone(final Boolean result) {
+                    DeferredAsyncTask<Void, Object, Boolean> task = new DeferredAsyncTask<Void, Object, Boolean>() {
+                        @Override
+                        protected Boolean doInBackgroundSafe(Void... voids) throws Exception {
+                            if (result) {
+                                // Data Layerに書き込む(上書き)
+                                PutDataMapRequest dataMap = PutDataMapRequest.create("/auth2data");
+                                dataMap.getDataMap().putString("Totp", models.toString());
+                                PutDataRequest request = dataMap.asPutDataRequest();
+                                DataApi.DataItemResult res = Wearable.DataApi.putDataItem(googleApiClient, request).await();
+                                return res.getStatus().isSuccess();
+                            }
+                            return false;
+                        }
+                    };
+                    task.executeOnExecutor(executorService);
+                    return task.promise();
+                }
+            }).done(new DoneCallback<Boolean>() {
+                @Override
+                public void onDone(Boolean result) {
+                    Log.i("Auth2", "Data send: " + result);
+                    if (googleApiClient != null && googleApiClient.isConnected()) {
+                        googleApiClient.disconnect();
+                    }
+                }
+            }).fail(new FailCallback<Throwable>() {
+                @Override
+                public void onFail(Throwable result) {
+                    Log.e("Auth2", result.getMessage());
+                    if (googleApiClient != null && googleApiClient.isConnected()) {
+                        googleApiClient.disconnect();
+                    }
+                    result.printStackTrace();
+                }
+            });
+        }
     }
+
+
 
     /**
      * 二段階認証カード情報を保持する Adapter
      */
     private class CardAdapter extends RecyclerView.Adapter<CardAdapter.ViewHolder> {
         private Context context;
-        private List<TotpModel> models = new ArrayList<>();
+        private ArrayList<TotpModel> models = new ArrayList<>();
 
-        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
             public TextView account, secret;
 
             public ViewHolder(View itemView) {
@@ -204,6 +250,7 @@ public class MainActivity extends ActionBarActivity {
                 account = (TextView) itemView.findViewById(R.id.card_accountid);
                 secret = (TextView) itemView.findViewById(R.id.card_authkey);
                 itemView.setOnClickListener(this);
+                itemView.setOnLongClickListener(this);
             }
 
             @Override
@@ -218,6 +265,16 @@ public class MainActivity extends ActionBarActivity {
                 // Toastを表示してアプリを終了する
                 Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show();
                 MainActivity.this.finish();
+            }
+
+            @Override
+            public boolean onLongClick(View view) {
+                TotpModel model = models.get(getPosition());
+                // 長押ししたら削除確認ダイアログを表示する
+                DeleteDialogFragment dialog = DeleteDialogFragment.newInstance(getPosition(),model.getId());
+                dialog.setTargetFragment(null, 0);
+                dialog.show(getSupportFragmentManager(), "dialog");
+                return true;
             }
         }
 
@@ -246,10 +303,20 @@ public class MainActivity extends ActionBarActivity {
         }
 
         /**
+         * データを削除します
+         * @param position 削除するデータの位置
+         */
+        public void delete(int position) {
+            models.remove(position);
+            notifyItemRemoved(position);
+        }
+
+        /**
          * データ一覧を取得します
+         *
          * @return 二段階認証データ一覧
          */
-        public List<TotpModel> getModels() {
+        public ArrayList<TotpModel> getModels() {
             return models;
         }
 
