@@ -52,6 +52,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onResume() {
         super.onResume();
+
+        adapter.clear();
         // Google Play Serviceに接続
         if (googleApiClient != null && !googleApiClient.isConnected()) {
             googleApiClient.connect();
@@ -76,12 +78,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         String jsonStr = "[" + splits[splits.length - 1];
 
                         JSONArray array = new JSONArray(jsonStr);
-                        // JSONがうまくパースできたっぽいのでリスト消す
-                        adapter.clear();
-
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject json = array.getJSONObject(i);
-                            adapter.add(new TotpModel(json.getString("accountid"), json.getString("secret"), json.getString("issuer")));
+                            if (adapter != null) {
+                                adapter.add(new TotpModel(json.getString("accountid"), json.getString("secret"), json.getString("issuer")));
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
