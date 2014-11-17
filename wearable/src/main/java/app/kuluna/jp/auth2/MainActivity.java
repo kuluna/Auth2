@@ -85,7 +85,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Log.e("Auth2", e.getMessage(), e);
                     }
                 }
                 dataItems.release();

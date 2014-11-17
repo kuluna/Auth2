@@ -227,7 +227,7 @@ public class MainActivity extends ActionBarActivity {
                     if (googleApiClient != null && googleApiClient.isConnected()) {
                         googleApiClient.disconnect();
                     }
-                    result.printStackTrace();
+                    Log.e("Auth2", result.getMessage(), result);
                 }
             });
         }
