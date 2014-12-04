@@ -1,6 +1,7 @@
 package app.kuluna.jp.auth2;
 
 import android.net.Uri;
+import android.util.Log;
 
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
@@ -48,6 +49,13 @@ public class TotpModel extends Model {
             accountId = uri.getLastPathSegment();
             issuer = uri.getQueryParameter("issuer");
             secret = uri.getQueryParameter("secret");
+
+            try {
+                // TOTPキーかどうか確認
+                new Totp(secret).now();
+            } catch (Exception e) {
+                throw new IllegalArgumentException("this is not totp uri " + uriString  + "\n" + e.getMessage());
+            }
         } else {
             throw new IllegalArgumentException("this is not totp uri " + uriString);
         }
@@ -80,7 +88,12 @@ public class TotpModel extends Model {
      * @return 認証キー
      */
     public String getAuthKey() {
-        return new Totp(secret).now();
+        try {
+            return new Totp(secret).now();
+        } catch (Exception e) {
+            Log.e("Auth2", "Invalid Key: " + secret);
+            return "Invalid Key!";
+        }
     }
 
     @Override
