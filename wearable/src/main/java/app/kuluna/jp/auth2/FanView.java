@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
@@ -12,18 +13,35 @@ import android.view.View;
  * Fan Draw View
  */
 public class FanView extends View {
+    private Paint mPaint;
+    private RectF mRectF;
+
     private int arcColor = Color.WHITE;
 
     public FanView(Context context) {
         super(context);
+        init();
     }
 
     public FanView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
     }
 
     public FanView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        init();
+    }
+
+    /** 描画に必要な準備を行います */
+    private void init() {
+        // Paintの初期化
+        mPaint = new Paint();
+        mPaint.setColor(arcColor);
+        mPaint.setAntiAlias(true);
+
+        // Fanの初期化
+        mRectF = new RectF(0, 0, 0, 0);
     }
 
     @Override
@@ -36,14 +54,9 @@ public class FanView extends View {
         int overWidth = (int) (getWidth() - diagonal) / 2;
         int overHeight = (int) (getHeight() - diagonal) / 2;
 
-
         // 描画
-        Paint paint = new Paint();
-        paint.setColor(arcColor);
-        paint.setAntiAlias(true);
-
-        RectF rectF = new RectF(overWidth, overHeight, (float) diagonal + overWidth, (float) diagonal + overHeight);
-        canvas.drawArc(rectF, 270, rad, true, paint);
+        mRectF.set(overWidth, overHeight, (float) diagonal + overWidth, (float) diagonal + overHeight);
+        canvas.drawArc(mRectF, 270, rad, true, mPaint);
 
         // そして再描画のループ
         invalidate();
@@ -51,5 +64,9 @@ public class FanView extends View {
 
     public void setArcColor(int color) {
         arcColor = color;
+    }
+
+    public int getArcColor() {
+        return arcColor;
     }
 }

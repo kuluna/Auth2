@@ -1,6 +1,7 @@
 package app.kuluna.jp.auth2;
 
 import android.net.Uri;
+import android.util.Log;
 
 import org.jboss.aerogear.security.otp.Totp;
 
@@ -33,10 +34,21 @@ public class TotpModel {
      * @param uriString otpauth:// から始まるUri
      */
     public TotpModel(String uriString) {
-        Uri uri = Uri.parse(uriString);
-        accountId = uri.getLastPathSegment();
-        issuer = uri.getQueryParameter("issuer");
-        secret = uri.getQueryParameter("secret");
+        if (uriString.matches(".*/totp/.*")) {
+            Uri uri = Uri.parse(uriString);
+            accountId = uri.getLastPathSegment();
+            issuer = uri.getQueryParameter("issuer");
+            secret = uri.getQueryParameter("secret");
+
+            try {
+                // TOTPキーかどうか確認
+                new Totp(secret).now();
+            } catch (Exception e) {
+                throw new IllegalArgumentException("this is not totp uri " + uriString  + "\n" + e.getMessage());
+            }
+        } else {
+            throw new IllegalArgumentException("this is not totp uri " + accountId);
+        }
     }
 
     /**
@@ -66,6 +78,11 @@ public class TotpModel {
      * @return 認証キー
      */
     public String getAuthKey() {
-        return new Totp(secret).now();
+        try {
+            return new Totp(secret).now();
+        } catch (Exception e) {
+            Log.e("Auth2", "Invalid Key: " + secret);
+            return "Invalid Key!";
+        }
     }
 }

@@ -3,12 +3,10 @@ package app.kuluna.jp.auth2;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.view.CardFragment;
-import android.support.wearable.view.CardFrame;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.support.wearable.view.WearableListView;
@@ -17,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -31,20 +30,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Auth2(Wear) メインアクティビティ
  */
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
     private GoogleApiClient googleApiClient;
-    private AuthListAdapter adapter;
+    private CardPagerAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final WearableListView listView = (WearableListView) findViewById(R.id.wearablelistview);
-        adapter = new AuthListAdapter();
-        listView.setAdapter(adapter);
+        final GridViewPager gridViewPager = (GridViewPager) findViewById(R.id.gridviewpager);
+        adapter = new CardPagerAdapter(getFragmentManager());
+        gridViewPager.setAdapter(adapter);
 
         googleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
     }
@@ -86,6 +85,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         }
                     } catch (Exception e) {
                         Log.e("Auth2", e.getMessage(), e);
+                        Toast.makeText(MainActivity.this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
                     }
                 }
                 dataItems.release();
@@ -106,7 +106,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     // 使わない
     @Override
-    public void onConnectionSuspended(int i) {}
+    public void onConnectionSuspended(int i) {
+    }
 
     private Handler h = new Handler() {
         @Override
@@ -118,16 +119,24 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
     };
 
-    private class AuthListAdapter extends WearableListView.Adapter {
+
+    /**
+     * GridViewPagerにTOTPキーを表示するためのAdapter
+     */
+    private class CardPagerAdapter extends FragmentGridPagerAdapter {
         private List<TotpModel> models = new ArrayList<>();
 
+        public CardPagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
         /**
-         * データを登録します
-         * @param model TOTPキー
+         * キーを追加します
+         * @param model {@link app.kuluna.jp.auth2.TotpModel}
          */
         public void add(TotpModel model) {
             models.add(model);
-            notifyItemInserted(getItemCount() - 1);
+            notifyDataSetChanged();
         }
 
         /**
@@ -139,31 +148,19 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
 
         @Override
-        public WearableListView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-            View v = LayoutInflater.from(MainActivity.this).inflate(R.layout.frame_key, viewGroup, false);
-            return new ViewHolder(v);
+        public Fragment getFragment(int i, int i2) {
+            TotpModel model = models.get(i);
+            return CardFragment.create(model.getAuthKey(), model.accountId);
         }
 
         @Override
-        public void onBindViewHolder(WearableListView.ViewHolder viewHolder, int i) {
-            TotpModel model = models.get(viewHolder.getPosition());
-            ((ViewHolder) viewHolder).account.setText(model.accountId);
-            ((ViewHolder) viewHolder).key.setText(model.getAuthKey());
-        }
-
-        @Override
-        public int getItemCount() {
+        public int getRowCount() {
             return models.size();
         }
 
-        public class ViewHolder extends WearableListView.ViewHolder {
-            public TextView account, key;
-
-            public ViewHolder(View itemView) {
-                super(itemView);
-                account = (TextView) itemView.findViewById(R.id.card_account);
-                key = (TextView) itemView.findViewById(R.id.card_authkey);
-            }
+        @Override
+        public int getColumnCount(int i) {
+            return 1;
         }
     }
 }
