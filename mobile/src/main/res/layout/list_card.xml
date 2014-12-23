@@ -19,6 +19,7 @@
             android:id="@+id/card_accountid"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
             android:text="Account Name" />
 
         <TextView
@@ -29,13 +30,15 @@
             android:layout_alignParentStart="true"
             android:layout_below="@+id/card_accountid"
             android:layout_marginTop="6dp"
+            android:fontFamily="sans-serif-light"
             android:text="123456"
+            android:textColor="@color/brandcolor_accent"
             android:textSize="42sp" />
 
         <View
-            android:id="@+id/card_progress"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="2dp"
             android:layout_alignBottom="@+id/card_authkey"
             android:background="@android:color/white" />
     </RelativeLayout>

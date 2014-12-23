@@ -16,7 +16,7 @@ public class FanView extends View {
     private Paint mPaint;
     private RectF mRectF;
 
-    private int arcColor = Color.WHITE;
+    private int arcColor = Color.GRAY;
 
     public FanView(Context context) {
         super(context);

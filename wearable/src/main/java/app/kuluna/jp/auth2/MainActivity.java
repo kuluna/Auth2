@@ -150,7 +150,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         @Override
         public Fragment getFragment(int i, int i2) {
             TotpModel model = models.get(i);
-            return CardFragment.create(model.getAuthKey(), model.accountId);
+            return TotpCardFragment.create(model.accountId, model.getAuthKey());
         }
 
         @Override
