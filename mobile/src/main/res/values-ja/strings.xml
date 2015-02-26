@@ -6,6 +6,7 @@
     <string name="confirm_delete">このトークンを削除してよろしいですか？</string>
     <string name="cancel">キャンセル</string>
     <string name="error_uri">TOTPトークンのみ対応しています</string>
+    <string name="preview">プレビュー</string>
     <string name="accountid">アカウントID</string>
     <string name="action_del">削除</string>
     <string name="apply">適用</string>
@@ -13,4 +14,5 @@
     <string name="error_auth2id">データが見つかりませんでした</string>
     <string name="error_textfilter">\'[\' と \']\'は使わないでください</string>
     <string name="issuer">Issuer</string>
+    <string name="edit">編集</string>
 </resources>

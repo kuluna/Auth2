@@ -84,7 +84,7 @@ public class DetailActivity extends ActionBarActivity implements View.OnClickLis
 
             // Action Upボタン
             case android.R.id.home:
-                finish();
+                setResultAndFinish(RESULT_CANCELED);
                 break;
 
         }
@@ -95,8 +95,7 @@ public class DetailActivity extends ActionBarActivity implements View.OnClickLis
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == BACK_DIALOG && resultCode == RESULT_OK) {
             // 削除に成功した場合はActivityを終了する
-            setResult(RESULT_OK);
-            finish();
+            setResultAndFinish(RESULT_OK);
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -112,8 +111,7 @@ public class DetailActivity extends ActionBarActivity implements View.OnClickLis
         model.issuer = editIssue.getText().toString();
         model.save();
 
-        setResult(RESULT_OK);
-        finish();
+        setResultAndFinish(RESULT_OK);
     }
 
     @Override
@@ -137,7 +135,15 @@ public class DetailActivity extends ActionBarActivity implements View.OnClickLis
         }
 
         // 画面情報を更新する
-        setTitle(editAccountId.getText().toString());
         textAccountId.setText(editAccountId.getText().toString());
+    }
+
+    /**
+     * リザルトコードを指定してこのActivityを終了します。
+     * @param resultCode リザルトコード
+     */
+    private void setResultAndFinish(int resultCode) {
+        setResult(resultCode);
+        finish();
     }
 }

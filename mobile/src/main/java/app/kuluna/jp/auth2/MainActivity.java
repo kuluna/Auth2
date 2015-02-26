@@ -240,12 +240,10 @@ public class MainActivity extends ActionBarActivity {
         private List<TotpModel> models = new ArrayList<>();
 
         public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-            public int id;
             public TextView account, secret;
 
-            public ViewHolder(View itemView, int i) {
+            public ViewHolder(View itemView) {
                 super(itemView);
-                id = i;
                 account = (TextView) itemView.findViewById(R.id.card_accountid);
                 secret = (TextView) itemView.findViewById(R.id.card_authkey);
                 itemView.setOnClickListener(this);
@@ -265,7 +263,7 @@ public class MainActivity extends ActionBarActivity {
 
                 // 詳細設定用Activityに飛ぶ
                 Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-                intent.putExtra("id", models.get(id).getId());
+                intent.putExtra("id", models.get(getPosition()).getId());
                 startActivityForResult(intent, BACK_DETAIL);
             }
         }
@@ -317,7 +315,7 @@ public class MainActivity extends ActionBarActivity {
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
             View v = LayoutInflater.from(context).inflate(R.layout.list_card, viewGroup, false);
-            return new ViewHolder(v, i);
+            return new ViewHolder(v);
         }
 
         @Override
