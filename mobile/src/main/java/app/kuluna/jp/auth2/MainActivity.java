@@ -252,7 +252,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View view) {
                 // 認証キーをクリップボードに保存する
-                ClipData.Item item = new ClipData.Item(models.get(getPosition()).getAuthKey());
+                ClipData.Item item = new ClipData.Item(secret.getText().toString());
                 String[] mimeType = {ClipDescription.MIMETYPE_TEXT_PLAIN};
                 ClipData cd = new ClipData(new ClipDescription("text_data", mimeType), item);
                 ClipboardManager cm = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
