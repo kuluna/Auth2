@@ -18,10 +18,14 @@ import com.activeandroid.query.Select;
  */
 public class DeleteDialogFragment extends DialogFragment {
 
-    public static DeleteDialogFragment newInstance(int position, long totpId) {
+    /**
+     *
+     * @param totpId 削除対象のモデルID
+     * @return Fragmentインスタンス
+     */
+    public static DeleteDialogFragment newInstance(long totpId) {
         DeleteDialogFragment f = new DeleteDialogFragment();
         Bundle args = new Bundle();
-        args.putInt("position", position);
         args.putLong("totpid", totpId);
         f.setArguments(args);
         return f;
@@ -35,14 +39,12 @@ public class DeleteDialogFragment extends DialogFragment {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                int position = getArguments().getInt("position");
                 long totpId = getArguments().getLong("totpid");
                 // 該当データを消す
                 new Delete().from(TotpModel.class).where("Id = ?", totpId).execute();
 
 
                 Intent intent = new Intent();
-                intent.putExtra("position", position);
                 if (getTargetFragment() != null) {
                     // 呼び出し元がFragmentの場合
                     getTargetFragment().onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, intent);

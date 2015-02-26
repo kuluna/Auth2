@@ -51,6 +51,9 @@ import java.util.concurrent.TimeUnit;
  * Auth2 メインアクティビティ
  */
 public class MainActivity extends ActionBarActivity {
+    /** DetailActivityから戻った時のリターンコード */
+    private static final int BACK_DETAIL = 10;
+
     private CardAdapter cardAdapter;
     private GoogleApiClient googleApiClient;
 
@@ -88,7 +91,9 @@ public class MainActivity extends ActionBarActivity {
         });
     }
 
-    /** 1分置きにキーを更新するHandler */
+    /**
+     * 1分置きにキーを更新するHandler
+     */
     private Handler updateHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -103,6 +108,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         super.onResume();
         updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+
     }
 
     @Override
@@ -114,24 +120,17 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case 0:
-            {
-                // 削除確認ダイアログでOKが押された時
+            // DetailActivityから戻ってきた時
+            case BACK_DETAIL:
                 if (resultCode == RESULT_OK) {
-                    int position = data.getIntExtra("position", -1);
-                    if (position != -1) {
-                        // 削除確認ダイアログでOKを押したらリストから消す
-                        cardAdapter.delete(position);
-
-                        // Android Wearと同期
-                        updateWearData(this, cardAdapter.getModels());
-                    }
+                    List<TotpModel> models = new Select().from(TotpModel.class).execute();
+                    cardAdapter.replace(models);
+                    // Android Wearと同期
+                    updateWearData(this, models);
                 }
                 break;
-            }
 
-            default:
-            {
+            default: {
                 // QRコードアプリからQRコードを読み取った時
                 if (data != null) {
                     IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
@@ -178,7 +177,6 @@ public class MainActivity extends ActionBarActivity {
      * TOTPデータをWearと同期させます(非同期)
      *
      * @param context アクティビティコンテキスト
-     * @param models TOTPモデルデータ
      */
     private void updateWearData(final Context context, final List<TotpModel> models) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -234,23 +232,23 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-
     /**
      * 二段階認証カード情報を保持する Adapter
      */
     private class CardAdapter extends RecyclerView.Adapter<CardAdapter.ViewHolder> {
         private Context context;
-        private ArrayList<TotpModel> models = new ArrayList<>();
+        private List<TotpModel> models = new ArrayList<>();
 
-        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
+        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+            public int id;
             public TextView account, secret;
 
-            public ViewHolder(View itemView) {
+            public ViewHolder(View itemView, int i) {
                 super(itemView);
+                id = i;
                 account = (TextView) itemView.findViewById(R.id.card_accountid);
                 secret = (TextView) itemView.findViewById(R.id.card_authkey);
                 itemView.setOnClickListener(this);
-                itemView.setOnLongClickListener(this);
             }
 
             @Override
@@ -262,19 +260,13 @@ public class MainActivity extends ActionBarActivity {
                 ClipboardManager cm = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(cd);
 
-                // Toastを表示してアプリを終了する
+                // Toastを表示する
                 Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show();
-                MainActivity.this.finish();
-            }
 
-            @Override
-            public boolean onLongClick(View view) {
-                TotpModel model = models.get(getPosition());
-                // 長押ししたら削除確認ダイアログを表示する
-                DeleteDialogFragment dialog = DeleteDialogFragment.newInstance(getPosition(),model.getId());
-                dialog.setTargetFragment(null, 0);
-                dialog.show(getSupportFragmentManager(), "dialog");
-                return true;
+                // 詳細設定用Activityに飛ぶ
+                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+                intent.putExtra("id", models.get(id).getId());
+                startActivityForResult(intent, BACK_DETAIL);
             }
         }
 
@@ -303,12 +295,14 @@ public class MainActivity extends ActionBarActivity {
         }
 
         /**
-         * データを削除します
-         * @param position 削除するデータの位置
+         *
+         * @param models 入れ替えるモデルデータ
          */
-        public void delete(int position) {
-            models.remove(position);
-            notifyItemRemoved(position);
+        public void replace(List<TotpModel> models) {
+            if (models != null) {
+                this.models = models;
+                notifyDataSetChanged();
+            }
         }
 
         /**
@@ -316,14 +310,14 @@ public class MainActivity extends ActionBarActivity {
          *
          * @return 二段階認証データ一覧
          */
-        public ArrayList<TotpModel> getModels() {
+        public List<TotpModel> getModels() {
             return models;
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
             View v = LayoutInflater.from(context).inflate(R.layout.list_card, viewGroup, false);
-            return new ViewHolder(v);
+            return new ViewHolder(v, i);
         }
 
         @Override
