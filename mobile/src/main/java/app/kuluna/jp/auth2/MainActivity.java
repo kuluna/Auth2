@@ -263,7 +263,7 @@ public class MainActivity extends ActionBarActivity {
 
                 // 詳細設定用Activityに飛ぶ
                 Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-                intent.putExtra("id", models.get(getPosition()).getId());
+                intent.putExtra("id", models.get(getAdapterPosition()).getId());
                 startActivityForResult(intent, BACK_DETAIL);
             }
         }
