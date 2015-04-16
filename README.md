@@ -1,12 +1,8 @@
 Auth2
 ====
 
-<!--
-[![Build Status](http://kuluvm.cloudapp.net:8080/job/Auth2/badge/icon)](http://kuluvm.cloudapp.net:8080/job/Auth2/)
--->
-
-![Auth2](image/phone.png)
-![Auth2](image/wear.png)
+![phone.png](https://bitbucket.org/repo/a9q964/images/3109687799-phone.png)
+![wear.png](https://bitbucket.org/repo/a9q964/images/453386965-wear.png)
 
 Sorry, this document is Japanese ONLY.
 
