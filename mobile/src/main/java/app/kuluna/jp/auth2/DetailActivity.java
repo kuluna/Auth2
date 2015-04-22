@@ -2,7 +2,7 @@ package app.kuluna.jp.auth2;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -17,7 +17,7 @@ import com.activeandroid.query.Select;
 /**
  * TOTPキーの詳細を表示するActivity
  */
-public class DetailActivity extends ActionBarActivity implements View.OnClickListener, TextWatcher {
+public class DetailActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher {
     /** ダイアログのリターンコード */
     private static final int BACK_DIALOG = 20;
 
