@@ -6,10 +6,13 @@ import android.util.Log;
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
+import com.scottyab.aescrypt.AESCrypt;
 
 import org.jboss.aerogear.security.otp.Totp;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.security.GeneralSecurityException;
 
 /**
  * 二段階認証(TOTP) モデル
@@ -53,8 +56,9 @@ public class TotpModel extends Model {
             try {
                 // TOTPキーかどうか確認
                 new Totp(secret).now();
+
             } catch (Exception e) {
-                throw new IllegalArgumentException("this is not totp uri " + uriString  + "\n" + e.getMessage());
+                throw new IllegalArgumentException("this is not totp uri " + uriString + "\n" + e.getMessage());
             }
         } else {
             throw new IllegalArgumentException("this is not totp uri " + uriString);
@@ -85,6 +89,7 @@ public class TotpModel extends Model {
 
     /**
      * 6桁の認証キーを取得します
+     *
      * @return 認証キー
      */
     public String getAuthKey() {

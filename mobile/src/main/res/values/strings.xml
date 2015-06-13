@@ -15,4 +15,5 @@
     <string name="apply">Apply</string>
     <string name="error_auth2id">Sorry, data not found</string>
     <string name="error_textfilter">Please do not use \'[\' and \']\'</string>
+    <string name="error_encrypt">Sorry, Data encrypt ERROR!</string>
 </resources>

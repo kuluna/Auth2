@@ -18,7 +18,7 @@ public class TotpCardFragment extends CardFragment {
      * @param authKey 6ケタの認証キー
      * @return {@link app.kuluna.jp.auth2.TotpCardFragment}
      */
-    public static TotpCardFragment create(String accountId, String authKey) {
+    public static TotpCardFragment newInstance(String accountId, String authKey) {
         TotpCardFragment f = new TotpCardFragment();
         Bundle args = new Bundle();
         args.putString("accountid", accountId);
@@ -28,7 +28,7 @@ public class TotpCardFragment extends CardFragment {
     }
 
     @Override
-    protected View onCreateContentView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateContentView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.frame_key, container, false);
     }
 

@@ -6,21 +6,16 @@ import android.app.FragmentManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.wearable.view.CardFragment;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
-import android.support.wearable.view.WearableListView;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataItemBuffer;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONArray;
@@ -72,11 +67,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             public void onResult(DataItemBuffer dataItems) {
                 for (DataItem item : dataItems) {
                     try {
-                        // 先頭に変なゴミがついてるので除去
-                        String[] splits = new String(item.getData()).split("\\[");
-                        String jsonStr = "[" + splits[splits.length - 1];
-
-                        JSONArray array = new JSONArray(jsonStr);
+                        DataMap data = DataMap.fromByteArray(item.getData());
+                        JSONArray array = new JSONArray(data.getString("Totp"));
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject json = array.getJSONObject(i);
                             if (adapter != null) {
@@ -150,7 +142,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         @Override
         public Fragment getFragment(int i, int i2) {
             TotpModel model = models.get(i);
-            return TotpCardFragment.create(model.accountId, model.getAuthKey());
+            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey());
         }
 
         @Override

@@ -8,8 +8,8 @@ android {
         applicationId "app.kuluna.jp.auth2"
         minSdkVersion 21
         targetSdkVersion 22
-        versionCode 7
-        versionName "1.1.0"
+        versionCode 8
+        versionName "1.2.0"
     }
     buildTypes {
         release {
@@ -34,4 +34,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-wearable:+'
     compile 'org.jboss.aerogear:aerogear-otp-java:+'
     compile 'com.google.code.gson:gson:+'
+    compile 'com.scottyab:aescrypt:+'
 }

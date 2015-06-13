@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -51,10 +52,12 @@ import java.util.concurrent.TimeUnit;
  * Auth2 メインアクティビティ
  */
 public class MainActivity extends AppCompatActivity {
-    /** DetailActivityから戻った時のリターンコード */
+    /**
+     * DetailActivityから戻った時のリターンコード
+     */
     private static final int BACK_DETAIL = 10;
 
-    private CardAdapter cardAdapter;
+    private TotpCardListAdapter totplistAdapter;
     private GoogleApiClient googleApiClient;
 
     @Override
@@ -67,16 +70,16 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        cardAdapter = new CardAdapter(this);
-        recyclerView.setAdapter(cardAdapter);
+        totplistAdapter = new TotpCardListAdapter(this);
+        recyclerView.setAdapter(totplistAdapter);
 
-
+        // データベースから全件取得してリストに表示する
         new AndroidDeferredManager().when(new DeferredAsyncTask<Void, Object, Void>() {
             @Override
             protected Void doInBackgroundSafe(Void... voids) throws Exception {
                 // 全件取得
                 List<TotpModel> datas = new Select().from(TotpModel.class).execute();
-                cardAdapter.addAll(datas);
+                totplistAdapter.addAll(datas);
 
                 return null;
             }
@@ -86,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 // プログレスバーを消す
                 findViewById(R.id.progressbar).setVisibility(View.GONE);
                 // Android Wearと同期
-                updateWearData(MainActivity.this, cardAdapter.getModels());
+                updateWearData(MainActivity.this, totplistAdapter.getModels());
             }
         });
     }
@@ -96,10 +99,10 @@ public class MainActivity extends AppCompatActivity {
      */
     private Handler updateHandler = new Handler() {
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             // 1分後に再更新
             updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
-            cardAdapter.notifyDataSetChanged();
+            totplistAdapter.notifyDataSetChanged();
             Log.i("Auth2", "Key Updated.");
         }
     };
@@ -124,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             case BACK_DETAIL:
                 if (resultCode == RESULT_OK) {
                     List<TotpModel> models = new Select().from(TotpModel.class).execute();
-                    cardAdapter.replace(models);
+                    totplistAdapter.replace(models);
                     // Android Wearと同期
                     updateWearData(this, models);
                 }
@@ -140,10 +143,10 @@ public class MainActivity extends AppCompatActivity {
                             // 問題なければ保存
                             totpModel.save();
                             // リストに追加
-                            cardAdapter.add(totpModel);
+                            totplistAdapter.add(totpModel);
 
                             // Android Wearと同期
-                            updateWearData(this, cardAdapter.getModels());
+                            updateWearData(this, totplistAdapter.getModels());
                         }
                     } catch (IllegalArgumentException e) {
                         Toast.makeText(this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
@@ -235,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 二段階認証カード情報を保持する Adapter
      */
-    private class CardAdapter extends RecyclerView.Adapter<CardAdapter.ViewHolder> {
+    private class TotpCardListAdapter extends RecyclerView.Adapter<TotpCardListAdapter.ViewHolder> {
         private Context context;
         private List<TotpModel> models = new ArrayList<>();
 
@@ -250,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onClick(View view) {
+            public void onClick(@NonNull View view) {
                 // 認証キーをクリップボードに保存する
                 ClipData.Item item = new ClipData.Item(secret.getText().toString());
                 String[] mimeType = {ClipDescription.MIMETYPE_TEXT_PLAIN};
@@ -268,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public CardAdapter(Context context) {
+        public TotpCardListAdapter(Context context) {
             this.context = context;
         }
 
@@ -293,7 +296,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         /**
-         *
          * @param models 入れ替えるモデルデータ
          */
         public void replace(List<TotpModel> models) {
