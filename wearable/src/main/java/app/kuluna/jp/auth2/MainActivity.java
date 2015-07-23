@@ -17,9 +17,8 @@ import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +57,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     /**
      * Google Play Serviceに接続できたときに呼ばれるメソッド
-     * @param bundle
      */
     @Override
     public void onConnected(Bundle bundle) {
@@ -67,19 +65,20 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             public void onResult(DataItemBuffer dataItems) {
                 for (DataItem item : dataItems) {
                     try {
+                        // 送られてきたTOTPデータを受け取る
                         DataMap data = DataMap.fromByteArray(item.getData());
-                        JSONArray array = new JSONArray(data.getString("Totp"));
-                        for (int i = 0; i < array.length(); i++) {
-                            JSONObject json = array.getJSONObject(i);
-                            if (adapter != null) {
-                                adapter.add(new TotpModel(json.getString("accountid"), json.getString("secret"), json.getString("issuer")));
-                            }
-                        }
+                        // JsoNからデシリアライズ
+                        List<TotpModel> models = new Gson().fromJson(data.getString("Totp"), new TypeToken<List<TotpModel>>() {}.getType());
+                        // リストに追加
+                        adapter.addAll(models);
+
                     } catch (Exception e) {
                         Log.e("Auth2", e.getMessage(), e);
                         Toast.makeText(MainActivity.this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
                     }
                 }
+
+                // リソース解放(ただしデータはまだ生きている模様)
                 dataItems.release();
             }
         });
@@ -124,10 +123,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         /**
          * キーを追加します
-         * @param model {@link app.kuluna.jp.auth2.TotpModel}
+         *
+         * @param models モデルのリスト
          */
-        public void add(TotpModel model) {
-            models.add(model);
+        public void addAll(List<TotpModel> models) {
+            this.models.addAll(models);
             notifyDataSetChanged();
         }
 
@@ -135,23 +135,23 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
          * リストをすべて消します
          */
         public void clear() {
-            models.clear();
+            this.models.clear();
             notifyDataSetChanged();
         }
 
         @Override
-        public Fragment getFragment(int i, int i2) {
-            TotpModel model = models.get(i);
+        public Fragment getFragment(int row, int column) {
+            TotpModel model = this.models.get(row);
             return TotpCardFragment.newInstance(model.accountId, model.getAuthKey());
         }
 
         @Override
         public int getRowCount() {
-            return models.size();
+            return this.models.size();
         }
 
         @Override
-        public int getColumnCount(int i) {
+        public int getColumnCount(int row) {
             return 1;
         }
     }

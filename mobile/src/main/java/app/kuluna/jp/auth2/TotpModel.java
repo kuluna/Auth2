@@ -36,6 +36,12 @@ public class TotpModel extends Model {
     public String secret;
 
     /**
+     * リストの表示順
+     */
+    @Column(name = "list_order")
+    public int listOrder;
+
+    /**
      * コンストラクタ
      */
     public TotpModel() {
@@ -52,6 +58,7 @@ public class TotpModel extends Model {
             accountId = uri.getLastPathSegment();
             issuer = uri.getQueryParameter("issuer");
             secret = uri.getQueryParameter("secret");
+            listOrder = 0;
 
             try {
                 // TOTPキーかどうか確認
@@ -63,19 +70,6 @@ public class TotpModel extends Model {
         } else {
             throw new IllegalArgumentException("this is not totp uri " + uriString);
         }
-    }
-
-    /**
-     * コンストラクタ
-     *
-     * @param accountId サービス名
-     * @param secret    アカウント名
-     * @param issuer    secret キー
-     */
-    public TotpModel(String accountId, String secret, String issuer) {
-        this.accountId = accountId;
-        this.secret = secret;
-        this.issuer = issuer;
     }
 
     /**
@@ -105,9 +99,10 @@ public class TotpModel extends Model {
     public String toString() {
         try {
             JSONObject json = new JSONObject();
-            json.put("accountid", accountId);
+            json.put("accountId", accountId);
             json.put("issuer", issuer);
             json.put("secret", secret);
+            json.put("listOrder", listOrder);
             return json.toString();
         } catch (JSONException e) {
             return super.toString();

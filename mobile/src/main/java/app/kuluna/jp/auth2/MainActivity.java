@@ -78,7 +78,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected Void doInBackgroundSafe(Void... voids) throws Exception {
                 // 全件取得
-                List<TotpModel> datas = new Select().from(TotpModel.class).execute();
+                List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
+                // test code
+                if (datas.size() > 0) {
+                    Log.i("Auth2", "order :" + datas.get(0).listOrder);
+                }
+                // end test code
+
                 totplistAdapter.addAll(datas);
 
                 return null;
