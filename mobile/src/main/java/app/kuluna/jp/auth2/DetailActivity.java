@@ -2,6 +2,7 @@ package app.kuluna.jp.auth2;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -18,7 +19,9 @@ import com.activeandroid.query.Select;
  * TOTPキーの詳細を表示するActivity
  */
 public class DetailActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher {
-    /** ダイアログのリターンコード */
+    /**
+     * ダイアログのリターンコード
+     */
     private static final int BACK_DIALOG = 20;
 
     private TextView textAccountId;
@@ -103,6 +106,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     /**
      * Applyボタンが押された時に呼ばれるメソッド
      * データの更新を行い、キー一覧画面へ戻る
+     *
      * @param v 押されたボタンオブジェクト
      */
     @Override
@@ -115,13 +119,17 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @Override
-    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    }
+
     @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {}
+    public void onTextChanged(@NonNull CharSequence s, int start, int before, int count) {
+    }
 
     /**
      * EditText入力後に呼ばれるメソッド
      * 文字列をチェックし、禁止文字を取り除いて画面に表示する
+     *
      * @param s 入力後の文字列
      */
     @Override
@@ -140,6 +148,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     /**
      * リザルトコードを指定してこのActivityを終了します。
+     *
      * @param resultCode リザルトコード
      */
     private void setResultAndFinish(int resultCode) {
