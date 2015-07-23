@@ -142,7 +142,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         @Override
         public Fragment getFragment(int row, int column) {
             TotpModel model = this.models.get(row);
-            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey());
+            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey(), model.listOrder);
         }
 
         @Override

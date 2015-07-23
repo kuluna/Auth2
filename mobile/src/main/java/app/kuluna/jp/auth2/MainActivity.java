@@ -21,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -72,32 +73,6 @@ public class MainActivity extends AppCompatActivity {
 
         totplistAdapter = new TotpCardListAdapter(this);
         recyclerView.setAdapter(totplistAdapter);
-
-        // データベースから全件取得してリストに表示する
-        new AndroidDeferredManager().when(new DeferredAsyncTask<Void, Object, Void>() {
-            @Override
-            protected Void doInBackgroundSafe(Void... voids) throws Exception {
-                // 全件取得
-                List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
-                // test code
-                if (datas.size() > 0) {
-                    Log.i("Auth2", "order :" + datas.get(0).listOrder);
-                }
-                // end test code
-
-                totplistAdapter.addAll(datas);
-
-                return null;
-            }
-        }).done(new DoneCallback<Void>() {
-            @Override
-            public void onDone(Void result) {
-                // プログレスバーを消す
-                findViewById(R.id.progressbar).setVisibility(View.GONE);
-                // Android Wearと同期
-                updateWearData(MainActivity.this, totplistAdapter.getModels());
-            }
-        });
     }
 
     /**
@@ -116,8 +91,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
 
+        // データベースから全件取得してリストに表示する
+        new AndroidDeferredManager().when(new DeferredAsyncTask<Void, Object, Void>() {
+            @Override
+            protected Void doInBackgroundSafe(Void... voids) throws Exception {
+                // 全件取得
+                List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
+                totplistAdapter.replace(datas);
+
+                return null;
+            }
+        }).done(new DoneCallback<Void>() {
+            @Override
+            public void onDone(Void result) {
+                // プログレスバーを消す
+                findViewById(R.id.progressbar).setVisibility(View.GONE);
+                // Android Wearと同期
+                updateWearData(MainActivity.this, totplistAdapter.getModels());
+            }
+        });
+
+
+        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
     @Override
@@ -250,11 +246,13 @@ public class MainActivity extends AppCompatActivity {
 
         public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             public TextView account, secret;
+            public ImageView star;
 
             public ViewHolder(View itemView) {
                 super(itemView);
                 account = (TextView) itemView.findViewById(R.id.card_accountid);
                 secret = (TextView) itemView.findViewById(R.id.card_authkey);
+                star = (ImageView) itemView.findViewById(R.id.card_star);
                 itemView.setOnClickListener(this);
             }
 
@@ -272,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // 詳細設定用Activityに飛ぶ
                 Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-                intent.putExtra("id", models.get(getAdapterPosition()).getId());
+                intent.putExtra("id", models.get(getLayoutPosition()).getId());
                 startActivityForResult(intent, BACK_DETAIL);
             }
         }
@@ -302,6 +300,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         /**
+         * データの入れ替えを行います
          * @param models 入れ替えるモデルデータ
          */
         public void replace(List<TotpModel> models) {
@@ -328,8 +327,15 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(ViewHolder viewHolder, int i) {
-            viewHolder.account.setText(models.get(i).accountId);
-            viewHolder.secret.setText(models.get(i).getAuthKey());
+            TotpModel model = models.get(i);
+            viewHolder.account.setText(model.accountId);
+            viewHolder.secret.setText(model.getAuthKey());
+            if (model.listOrder > 0) {
+                viewHolder.star.setVisibility(View.VISIBLE);
+            } else{
+                viewHolder.star.setVisibility(View.INVISIBLE);
+            }
+
             viewHolder.secret.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fadeout_fadein));
         }
 

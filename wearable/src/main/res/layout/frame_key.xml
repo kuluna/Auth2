@@ -1,29 +1,36 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/card_account"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
         android:fontFamily="sans-serif-light"
         android:maxLines="2"
-        android:text="account"
-        android:textColor="#666" />
+        android:textColor="#666"
+        tools:text="account" />
+
+    <ImageView
+        android:id="@+id/card_star"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/card_account"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_star" />
 
     <TextView
         android:id="@+id/card_authkey"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="6dp"
-        android:layout_marginTop="6dp"
+        android:layout_below="@+id/card_star"
+        android:layout_centerHorizontal="true"
         android:fontFamily="sans-serif-thin"
-        android:text="123456"
         android:textColor="@color/brandcolor_accent"
-        android:textSize="32sp" />
+        android:textSize="32sp"
+        tools:text="123456" />
 
-</LinearLayout>
+</RelativeLayout>
 

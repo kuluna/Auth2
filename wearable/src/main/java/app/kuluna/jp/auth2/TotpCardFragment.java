@@ -18,11 +18,12 @@ public class TotpCardFragment extends CardFragment {
      * @param authKey 6ケタの認証キー
      * @return {@link app.kuluna.jp.auth2.TotpCardFragment}
      */
-    public static TotpCardFragment newInstance(String accountId, String authKey) {
+    public static TotpCardFragment newInstance(String accountId, String authKey, int listOrder) {
         TotpCardFragment f = new TotpCardFragment();
         Bundle args = new Bundle();
         args.putString("accountid", accountId);
         args.putString("authkey", authKey);
+        args.putInt("listorder", listOrder);
         f.setArguments(args);
         return f;
     }
@@ -40,5 +41,10 @@ public class TotpCardFragment extends CardFragment {
         View v = getView();
         ((TextView) v.findViewById(R.id.card_account)).setText(args.getString("accountid"));
         ((TextView) v.findViewById(R.id.card_authkey)).setText(args.getString("authkey"));
+        if (args.getInt("listorder") > 0) {
+            v.findViewById(R.id.card_star).setVisibility(View.VISIBLE);
+        } else {
+            v.findViewById(R.id.card_star).setVisibility(View.INVISIBLE);
+        }
     }
 }

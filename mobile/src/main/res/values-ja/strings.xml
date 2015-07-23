@@ -13,7 +13,8 @@
     <string name="auth2id">Auth2 ID</string>
     <string name="error_auth2id">データが見つかりませんでした</string>
     <string name="error_textfilter">\'[\' と \']\'は使わないでください</string>
-    <string name="issuer">Issuer</string>
+    <string name="issuer">サービス</string>
     <string name="edit">編集</string>
     <string name="error_encrypt">データの暗号化処理でエラーが発生しました</string>
+    <string name="priority">優先度</string>
 </resources>

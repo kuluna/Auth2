@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,7 +26,8 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     private static final int BACK_DIALOG = 20;
 
     private TextView textAccountId;
-    private EditText editAccountId, editIssue;
+    private EditText editAccountId;
+    private SeekBar seekbarPriority;
     private TotpModel model;
 
     @Override
@@ -49,8 +51,9 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         EditText auth2id = (EditText) findViewById(R.id.edittext_auth2id);
         editAccountId = (EditText) findViewById(R.id.edittext_accountId);
         editAccountId.addTextChangedListener(this);
-        editIssue = (EditText) findViewById(R.id.edittext_issue);
+        EditText editIssue = (EditText) findViewById(R.id.edittext_issue);
         editIssue.addTextChangedListener(this);
+        seekbarPriority = (SeekBar) findViewById(R.id.seekbar_priority);
         findViewById(R.id.button_apply).setOnClickListener(this);
 
         // データ取得
@@ -62,6 +65,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         auth2id.setText(String.valueOf(model.getId()));
         editAccountId.setText(model.accountId);
         editIssue.setText(model.issuer);
+        seekbarPriority.setProgress(model.listOrder);
 
         // ActionBarにUpボタンの追加
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -106,13 +110,11 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     /**
      * Applyボタンが押された時に呼ばれるメソッド
      * データの更新を行い、キー一覧画面へ戻る
-     *
-     * @param v 押されたボタンオブジェクト
      */
     @Override
-    public void onClick(View v) {
+    public void onClick(@NonNull View v) {
         model.accountId = editAccountId.getText().toString();
-        model.issuer = editIssue.getText().toString();
+        model.listOrder = seekbarPriority.getProgress();
         model.save();
 
         setResultAndFinish(RESULT_OK);
@@ -129,8 +131,6 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     /**
      * EditText入力後に呼ばれるメソッド
      * 文字列をチェックし、禁止文字を取り除いて画面に表示する
-     *
-     * @param s 入力後の文字列
      */
     @Override
     public void afterTextChanged(Editable s) {
@@ -138,7 +138,6 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         String match = "(\\[|\\])";
         if (s.toString().matches(".*" + match + ".*")) {
             editAccountId.setText(editAccountId.getText().toString().replaceAll(match, ""));
-            editIssue.setText(editIssue.getText().toString().replaceAll(match, ""));
             Toast.makeText(this, getString(R.string.error_textfilter), Toast.LENGTH_LONG).show();
         }
 
