@@ -32,15 +32,13 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
-import org.jdeferred.DoneCallback;
+import org.jdeferred.AlwaysCallback;
 import org.jdeferred.DonePipe;
-import org.jdeferred.FailCallback;
 import org.jdeferred.Promise;
 import org.jdeferred.android.AndroidDeferredManager;
 import org.jdeferred.android.DeferredAsyncTask;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,11 +48,6 @@ import java.util.concurrent.TimeUnit;
  * Auth2 メインアクティビティ
  */
 public class MainActivity extends AppCompatActivity {
-    /**
-     * DetailActivityから戻った時のリターンコード
-     */
-    private static final int BACK_DETAIL = 10;
-
     private TotpCardListAdapter totplistAdapter;
     private GoogleApiClient googleApiClient;
 
@@ -90,26 +83,16 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         // データベースから全件取得してリストに表示する
-        new AndroidDeferredManager().when(new DeferredAsyncTask<Void, Object, Void>() {
-            @Override
-            protected Void doInBackgroundSafe(Void... voids) throws Exception {
-                // 全件取得
-                List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
-                totplistAdapter.replace(datas, false);
+        // 全件取得
+        List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
+        totplistAdapter.replace(datas, false);
 
-                return null;
-            }
-        }).done(new DoneCallback<Void>() {
-            @Override
-            public void onDone(Void result) {
-                // データ変更を画面に反映する
-                updateHandler.sendEmptyMessage(0);
-                // プログレスバーを消す
-                findViewById(R.id.progressbar).setVisibility(View.GONE);
-                // Android Wearと同期
-                updateWearData(MainActivity.this, totplistAdapter.getModels());
-            }
-        });
+        // データ変更を画面に反映する
+        updateHandler.sendEmptyMessage(0);
+        // プログレスバーを消す
+        findViewById(R.id.progressbar).setVisibility(View.GONE);
+        // Android Wearと同期
+        updateWearData(MainActivity.this, totplistAdapter.getModels());
     }
 
     @Override
@@ -120,28 +103,23 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            default: {
-                // QRコードアプリからQRコードを読み取った時
-                if (data != null) {
-                    IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-                    try {
-                        TotpModel totpModel = new TotpModel(result.getContents());
-                        if (totpModel.isOtpAuth()) {
-                            // 問題なければ保存
-                            totpModel.save();
-                            // リストに追加
-                            totplistAdapter.add(totpModel);
+        // QRコードの読み取り結果
+        if (requestCode == IntentIntegrator.REQUEST_CODE && data != null) {
+            IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+            try {
+                TotpModel totpModel = new TotpModel(result.getContents());
+                if (totpModel.isOtpAuth()) {
+                    // 問題なければ保存
+                    totpModel.save();
+                    // リストに追加
+                    totplistAdapter.add(totpModel);
 
-                            // Android Wearと同期
-                            updateWearData(this, totplistAdapter.getModels());
-                        }
-                    } catch (IllegalArgumentException e) {
-                        Toast.makeText(this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
-                        Log.e("Auth2", getString(R.string.error_uri), e);
-                    }
+                    // Android Wearと同期
+                    updateWearData(this, totplistAdapter.getModels());
                 }
-                break;
+            } catch (IllegalArgumentException e) {
+                Toast.makeText(this, getString(R.string.error_uri), Toast.LENGTH_LONG).show();
+                Log.e("Auth2", getString(R.string.error_uri), e);
             }
         }
     }
@@ -168,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
      * TOTPデータをWearと同期させます(非同期)
      *
      * @param context アクティビティコンテキスト
+     * @param models 同期させるデータ
      */
     private void updateWearData(final Context context, final List<TotpModel> models) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -201,22 +180,19 @@ public class MainActivity extends AppCompatActivity {
                     task.executeOnExecutor(executorService);
                     return task.promise();
                 }
-            }).done(new DoneCallback<Boolean>() {
+            }).always(new AlwaysCallback<Boolean, Throwable>() {
                 @Override
-                public void onDone(Boolean result) {
-                    Log.i("Auth2", "Data send: " + result);
+                public void onAlways(Promise.State state, Boolean resolved, Throwable rejected) {
+                    Log.i("Auth2", "Data send: " + resolved);
+                    // 失敗の場合は例外を表示
+                    if (rejected != null) {
+                        Log.e("Auth2", rejected.getMessage(), rejected);
+                    }
+
+                    // Google Play Serviceを切断
                     if (googleApiClient != null && googleApiClient.isConnected()) {
                         googleApiClient.disconnect();
                     }
-                }
-            }).fail(new FailCallback<Throwable>() {
-                @Override
-                public void onFail(Throwable result) {
-                    Log.e("Auth2", result.getMessage());
-                    if (googleApiClient != null && googleApiClient.isConnected()) {
-                        googleApiClient.disconnect();
-                    }
-                    Log.e("Auth2", result.getMessage(), result);
                 }
             });
         }
@@ -263,16 +239,6 @@ public class MainActivity extends AppCompatActivity {
         public void add(TotpModel model) {
             models.add(model);
             notifyItemInserted(getItemCount() - 1);
-        }
-
-        /**
-         * データを追加します
-         *
-         * @param models 二段階認証データ
-         */
-        public void addAll(Collection<TotpModel> models) {
-            this.models.addAll(models);
-            notifyItemRangeInserted(this.models.size() - models.size() - 1, models.size());
         }
 
         /**

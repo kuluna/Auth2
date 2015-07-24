@@ -191,7 +191,6 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
     }
 
     @Override
