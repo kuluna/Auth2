@@ -1,8 +1,5 @@
 package app.kuluna.jp.auth2;
 
-import android.content.ClipData;
-import android.content.ClipDescription;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -98,22 +95,21 @@ public class MainActivity extends AppCompatActivity {
             protected Void doInBackgroundSafe(Void... voids) throws Exception {
                 // 全件取得
                 List<TotpModel> datas = new Select().from(TotpModel.class).orderBy("list_order desc").execute();
-                totplistAdapter.replace(datas);
+                totplistAdapter.replace(datas, false);
 
                 return null;
             }
         }).done(new DoneCallback<Void>() {
             @Override
             public void onDone(Void result) {
+                // データ変更を画面に反映する
+                updateHandler.sendEmptyMessage(0);
                 // プログレスバーを消す
                 findViewById(R.id.progressbar).setVisibility(View.GONE);
                 // Android Wearと同期
                 updateWearData(MainActivity.this, totplistAdapter.getModels());
             }
         });
-
-
-        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
     @Override
@@ -125,16 +121,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            // DetailActivityから戻ってきた時
-            case BACK_DETAIL:
-                if (resultCode == RESULT_OK) {
-                    List<TotpModel> models = new Select().from(TotpModel.class).execute();
-                    totplistAdapter.replace(models);
-                    // Android Wearと同期
-                    updateWearData(this, models);
-                }
-                break;
-
             default: {
                 // QRコードアプリからQRコードを読み取った時
                 if (data != null) {
@@ -258,20 +244,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(@NonNull View view) {
-                // 認証キーをクリップボードに保存する
-                ClipData.Item item = new ClipData.Item(secret.getText().toString());
-                String[] mimeType = {ClipDescription.MIMETYPE_TEXT_PLAIN};
-                ClipData cd = new ClipData(new ClipDescription("text_data", mimeType), item);
-                ClipboardManager cm = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
-                cm.setPrimaryClip(cd);
-
-                // Toastを表示する
-                Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show();
-
                 // 詳細設定用Activityに飛ぶ
                 Intent intent = new Intent(MainActivity.this, DetailActivity.class);
                 intent.putExtra("id", models.get(getLayoutPosition()).getId());
-                startActivityForResult(intent, BACK_DETAIL);
+                startActivity(intent);
             }
         }
 
@@ -302,11 +278,14 @@ public class MainActivity extends AppCompatActivity {
         /**
          * データの入れ替えを行います
          * @param models 入れ替えるモデルデータ
+         * @param notifyDataSetChanged データセットの変更をAdapteに通知する
          */
-        public void replace(List<TotpModel> models) {
+        public void replace(List<TotpModel> models, boolean notifyDataSetChanged) {
             if (models != null) {
                 this.models = models;
-                notifyDataSetChanged();
+                if (notifyDataSetChanged) {
+                    notifyDataSetChanged();
+                }
             }
         }
 

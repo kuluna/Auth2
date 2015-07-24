@@ -7,7 +7,6 @@
     <string name="confirm_delete">Delete Token?</string>
     <string name="cancel">Cancel</string>
     <string name="error_uri">Sorry, TOTP Only</string>
-    <string name="preview">Preview</string>
     <string name="edit">Edit</string>
     <string name="auth2id">Auth2 ID</string>
     <string name="accountid">Account ID</string>

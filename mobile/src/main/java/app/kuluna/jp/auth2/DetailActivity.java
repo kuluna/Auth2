@@ -1,15 +1,22 @@
 package app.kuluna.jp.auth2;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,20 +26,20 @@ import com.activeandroid.query.Select;
 /**
  * TOTPキーの詳細を表示するActivity
  */
-public class DetailActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher {
+public class DetailActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher, SeekBar.OnSeekBarChangeListener {
     /**
      * ダイアログのリターンコード
      */
     private static final int BACK_DIALOG = 20;
 
-    private TextView textAccountId;
+    private TextView textAccountId, textSecret;
+    private ImageView imageStar;
     private EditText editAccountId;
     private SeekBar seekbarPriority;
     private TotpModel model;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setResult(RESULT_CANCELED);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
@@ -47,21 +54,23 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
         // XMLの関連付け
         textAccountId = (TextView) findViewById(R.id.card_accountid);
-        TextView authKey = (TextView) findViewById(R.id.card_authkey);
+        textSecret = (TextView) findViewById(R.id.card_authkey);
+        imageStar = (ImageView) findViewById(R.id.card_star);
         EditText auth2id = (EditText) findViewById(R.id.edittext_auth2id);
         editAccountId = (EditText) findViewById(R.id.edittext_accountId);
         editAccountId.addTextChangedListener(this);
         EditText editIssue = (EditText) findViewById(R.id.edittext_issue);
         editIssue.addTextChangedListener(this);
         seekbarPriority = (SeekBar) findViewById(R.id.seekbar_priority);
+        seekbarPriority.setOnSeekBarChangeListener(this);
+        findViewById(R.id.include_keycard).setOnClickListener(this);
         findViewById(R.id.button_apply).setOnClickListener(this);
 
         // データ取得
         model = new Select().from(TotpModel.class).where("id=?", id).executeSingle();
         // データマッピング
         setTitle(model.accountId);
-        authKey.setTextColor(getResources().getColor(R.color.brandcolor_dark));
-        authKey.setText("XXXXXX");
+        imageStar.setVisibility(View.INVISIBLE);
         auth2id.setText(String.valueOf(model.getId()));
         editAccountId.setText(model.accountId);
         editIssue.setText(model.issuer);
@@ -69,6 +78,18 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
         // ActionBarにUpボタンの追加
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateHandler.sendEmptyMessage(100);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        updateHandler.removeMessages(100);
     }
 
     @Override
@@ -91,33 +112,43 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
             // Action Upボタン
             case android.R.id.home:
-                setResultAndFinish(RESULT_CANCELED);
+                finish();
                 break;
 
         }
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * 削除確認ダイアログから戻ってきたときに呼ばれるメソッド
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == BACK_DIALOG && resultCode == RESULT_OK) {
             // 削除に成功した場合はActivityを終了する
-            setResultAndFinish(RESULT_OK);
+            finish();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
-     * Applyボタンが押された時に呼ばれるメソッド
-     * データの更新を行い、キー一覧画面へ戻る
+     *
      */
     @Override
     public void onClick(@NonNull View v) {
-        model.accountId = editAccountId.getText().toString();
-        model.listOrder = seekbarPriority.getProgress();
-        model.save();
+        if (v.getId() == R.id.button_apply) {
+            // Applyボタンが押された時
+            // データの更新を行い、キー一覧画面へ戻る
+            model.accountId = editAccountId.getText().toString();
+            model.listOrder = seekbarPriority.getProgress();
+            model.save();
 
-        setResultAndFinish(RESULT_OK);
+            finish();
+        } else if (v.getId() == R.id.include_keycard) {
+            // キーを表示するカードが押された時
+            // キーをクリップボードにコピーする
+            copyClipboard();
+        }
     }
 
     @Override
@@ -146,12 +177,54 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     /**
-     * リザルトコードを指定してこのActivityを終了します。
-     *
-     * @param resultCode リザルトコード
+     * 優先度のシークバーを操作した時に呼ばれるメソッド
+     * 優先度1以上なら星を表示させる
      */
-    private void setResultAndFinish(int resultCode) {
-        setResult(resultCode);
-        finish();
+    @Override
+    public void onProgressChanged(@NonNull SeekBar seekBar, int progress, boolean user) {
+        if (progress > 0) {
+            imageStar.setVisibility(View.VISIBLE);
+        } else {
+            imageStar.setVisibility(View.INVISIBLE);
+        }
     }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(@NonNull SeekBar seekBar) {
+    }
+
+    /**
+     * キーをクリップボードにコピーします
+     */
+    private void copyClipboard() {
+        // 認証キーをクリップボードに保存する
+        ClipData.Item item = new ClipData.Item(model.getAuthKey());
+        String[] mimeType = {ClipDescription.MIMETYPE_TEXT_PLAIN};
+        ClipData cd = new ClipData(new ClipDescription("text_data", mimeType), item);
+        ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(cd);
+
+        // コピー成功のToastを表示する
+        Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 1分置きにキーを更新するHandler
+     */
+    private Handler updateHandler = new Handler() {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            // 1分後に再更新
+            updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+
+            textSecret.setText(String.valueOf(model.getAuthKey()));
+            copyClipboard();
+            Log.i("Auth2", "Key Updated.");
+        }
+    };
 }
