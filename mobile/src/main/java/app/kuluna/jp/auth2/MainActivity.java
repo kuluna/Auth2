@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void handleMessage(@NonNull Message msg) {
             // 1分後に再更新
-            updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+            updateHandler.sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
             totplistAdapter.notifyDataSetChanged();
             Log.i("Auth2", "Key Updated.");
         }

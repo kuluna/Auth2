@@ -220,7 +220,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
         @Override
         public void handleMessage(@NonNull Message msg) {
             // 1分後に再更新
-            updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+            updateHandler.sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
 
             textSecret.setText(String.valueOf(model.getAuthKey()));
             copyClipboard();
