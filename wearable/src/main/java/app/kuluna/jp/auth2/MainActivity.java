@@ -1,14 +1,15 @@
 package app.kuluna.jp.auth2;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -26,7 +27,7 @@ import java.util.List;
 /**
  * Auth2(Wear) メインアクティビティ
  */
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
+public class MainActivity extends WearableActivity implements GoogleApiClient.ConnectionCallbacks {
     private GoogleApiClient googleApiClient;
     private CardPagerAdapter adapter;
 
@@ -34,11 +35,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        // AmbientModeを有効にする
+        setAmbientEnabled();
+        // キーを表示するカードを設置する
         final GridViewPager gridViewPager = (GridViewPager) findViewById(R.id.gridviewpager);
         adapter = new CardPagerAdapter(getFragmentManager());
         gridViewPager.setAdapter(adapter);
 
+        // Google Play Serviceクライアント
         googleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
     }
 
@@ -52,6 +56,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             googleApiClient.connect();
         }
 
+        // 1分毎にキーを更新
         h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
@@ -68,7 +73,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         // 送られてきたTOTPデータを受け取る
                         DataMap data = DataMap.fromByteArray(item.getData());
                         // JsoNからデシリアライズ
-                        List<TotpModel> models = new Gson().fromJson(data.getString("Totp"), new TypeToken<List<TotpModel>>() {}.getType());
+                        List<TotpModel> models = new Gson().fromJson(data.getString("Totp"), new TypeToken<List<TotpModel>>() {
+                        }.getType());
                         // リストに追加
                         adapter.addAll(models);
 
@@ -92,6 +98,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             googleApiClient.disconnect();
         }
 
+        // キーの更新を止める
         h.removeMessages(0);
     }
 
@@ -100,6 +107,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onConnectionSuspended(int i) {
     }
 
+    /**
+     * 1分毎にキーを更新するHandler
+     */
     private Handler h = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -110,6 +120,23 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
     };
 
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+        // AmbientMode時はFanViewを停止する
+        FanView fanView = (FanView) findViewById(R.id.fanview);
+        fanView.setVisibility(View.INVISIBLE);
+        fanView.stopDraw();
+    }
+
+    @Override
+    public void onExitAmbient() {
+        // 通常モードに戻った時FanViewを再開する
+        FanView fanView = (FanView) findViewById(R.id.fanview);
+        fanView.setVisibility(View.VISIBLE);
+        fanView.startDraw();
+        super.onExitAmbient();
+    }
 
     /**
      * GridViewPagerにTOTPキーを表示するためのAdapter

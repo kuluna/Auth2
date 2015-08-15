@@ -18,6 +18,8 @@ public class FanView extends View {
 
     private int arcColor = Color.GRAY;
 
+    private boolean drawMode = true;
+
     public FanView(Context context) {
         super(context);
         init();
@@ -47,19 +49,22 @@ public class FanView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        // 現在時刻に基づいた円弧の角度を求める
-        float rad = (float) 0.006 * (System.currentTimeMillis() % 60000);
-        // 描画枠の対角線の長さを求める
-        double diagonal = Math.sqrt((getWidth() * getWidth()) + (getHeight() * getHeight()));
-        int overWidth = (int) (getWidth() - diagonal) / 2;
-        int overHeight = (int) (getHeight() - diagonal) / 2;
 
-        // 描画
-        mRectF.set(overWidth, overHeight, (float) diagonal + overWidth, (float) diagonal + overHeight);
-        canvas.drawArc(mRectF, 270, rad, true, mPaint);
+        if (drawMode) {
+            // 現在時刻に基づいた円弧の角度を求める
+            float rad = (float) 0.006 * (System.currentTimeMillis() % 60000);
+            // 描画枠の対角線の長さを求める
+            double diagonal = Math.sqrt((getWidth() * getWidth()) + (getHeight() * getHeight()));
+            int overWidth = (int) (getWidth() - diagonal) / 2;
+            int overHeight = (int) (getHeight() - diagonal) / 2;
 
-        // そして再描画のループ
-        invalidate();
+            // 描画
+            mRectF.set(overWidth, overHeight, (float) diagonal + overWidth, (float) diagonal + overHeight);
+            canvas.drawArc(mRectF, 270, rad, true, mPaint);
+
+            // そして再描画のループ
+            invalidate();
+        }
     }
 
     public void setArcColor(int color) {
@@ -68,5 +73,14 @@ public class FanView extends View {
 
     public int getArcColor() {
         return arcColor;
+    }
+
+    public void startDraw() {
+        drawMode = true;
+        invalidate();
+    }
+
+    public void stopDraw() {
+        drawMode = false;
     }
 }
