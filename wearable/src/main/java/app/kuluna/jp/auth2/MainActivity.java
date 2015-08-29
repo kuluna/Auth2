@@ -21,6 +21,7 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,7 @@ import java.util.List;
 public class MainActivity extends WearableActivity implements GoogleApiClient.ConnectionCallbacks {
     private GoogleApiClient googleApiClient;
     private CardPagerAdapter adapter;
+    private UpdateHandler updateHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +43,8 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         final GridViewPager gridViewPager = (GridViewPager) findViewById(R.id.gridviewpager);
         adapter = new CardPagerAdapter(getFragmentManager());
         gridViewPager.setAdapter(adapter);
+        // 1分毎に実行するHandlerのセットアップ
+        updateHandler = new UpdateHandler(this);
 
         // Google Play Serviceクライアント
         googleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
@@ -57,7 +61,7 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         }
 
         // 1分毎にキーを更新
-        h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
     /**
@@ -99,26 +103,13 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         }
 
         // キーの更新を止める
-        h.removeMessages(0);
+        updateHandler.removeMessages(0);
     }
 
     // 使わない
     @Override
     public void onConnectionSuspended(int i) {
     }
-
-    /**
-     * 1分毎にキーを更新するHandler
-     */
-    private Handler h = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            // 1分後に再更新
-            h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
-            adapter.notifyDataSetChanged();
-            Log.i("Auth2", "Key Updated.");
-        }
-    };
 
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
@@ -136,6 +127,32 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         fanView.setVisibility(View.VISIBLE);
         fanView.startDraw();
         super.onExitAmbient();
+    }
+
+    @Override
+    public void onUpdateAmbient() {
+        super.onUpdateAmbient();
+        // AmbientMode時はHandlerが停止しているのでこちらで更新する
+        adapter.notifyDataSetChanged();
+        Log.i("Auth2", "Key Updated.");
+    }
+
+    /**
+     * 1分毎にキーを更新するHandler
+     */
+    private static class UpdateHandler extends Handler {
+        private final WeakReference<MainActivity> activity;
+
+        public UpdateHandler(MainActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
+            activity.get().adapter.notifyDataSetChanged();
+            Log.i("Auth2", "Key Updated.");
+        }
     }
 
     /**

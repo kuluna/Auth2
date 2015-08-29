@@ -38,6 +38,7 @@ import org.jdeferred.Promise;
 import org.jdeferred.android.AndroidDeferredManager;
 import org.jdeferred.android.DeferredAsyncTask;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -50,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
     private TotpCardListAdapter totplistAdapter;
     private GoogleApiClient googleApiClient;
+    private UpdateHandler updateHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,20 +65,9 @@ public class MainActivity extends AppCompatActivity {
 
         totplistAdapter = new TotpCardListAdapter(this);
         recyclerView.setAdapter(totplistAdapter);
-    }
 
-    /**
-     * 1分置きにキーを更新するHandler
-     */
-    private Handler updateHandler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            // 1分後に再更新
-            updateHandler.sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
-            totplistAdapter.notifyDataSetChanged();
-            Log.i("Auth2", "Key Updated.");
-        }
-    };
+        updateHandler = new UpdateHandler(this);
+    }
 
     @Override
     protected void onResume() {
@@ -146,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
      * TOTPデータをWearと同期させます(非同期)
      *
      * @param context アクティビティコンテキスト
-     * @param models 同期させるデータ
+     * @param models  同期させるデータ
      */
     private void updateWearData(final Context context, final List<TotpModel> models) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -200,6 +191,25 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
+     * 1分毎にキーを更新するHandler
+     */
+    private static class UpdateHandler extends Handler {
+        private final WeakReference<MainActivity> activity;
+
+        public UpdateHandler(MainActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
+            activity.get().totplistAdapter.notifyDataSetChanged();
+            Log.i("Auth2", "Key Updated.");
+        }
+    }
+
+
+    /**
      * 二段階認証カード情報を保持する Adapter
      */
     private class TotpCardListAdapter extends RecyclerView.Adapter<TotpCardListAdapter.ViewHolder> {
@@ -243,7 +253,8 @@ public class MainActivity extends AppCompatActivity {
 
         /**
          * データの入れ替えを行います
-         * @param models 入れ替えるモデルデータ
+         *
+         * @param models               入れ替えるモデルデータ
          * @param notifyDataSetChanged データセットの変更をAdapteに通知する
          */
         public void replace(List<TotpModel> models, boolean notifyDataSetChanged) {
@@ -277,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
             viewHolder.secret.setText(model.getAuthKey());
             if (model.listOrder > 0) {
                 viewHolder.star.setVisibility(View.VISIBLE);
-            } else{
+            } else {
                 viewHolder.star.setVisibility(View.INVISIBLE);
             }
 
