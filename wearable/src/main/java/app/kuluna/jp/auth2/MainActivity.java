@@ -118,6 +118,7 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         FanView fanView = (FanView) findViewById(R.id.fanview);
         fanView.setVisibility(View.INVISIBLE);
         fanView.stopDraw();
+        adapter.notifyDataSetChanged(true);
     }
 
     @Override
@@ -126,6 +127,8 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         FanView fanView = (FanView) findViewById(R.id.fanview);
         fanView.setVisibility(View.VISIBLE);
         fanView.startDraw();
+        adapter.notifyDataSetChanged(false);
+
         super.onExitAmbient();
     }
 
@@ -133,7 +136,7 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
     public void onUpdateAmbient() {
         super.onUpdateAmbient();
         // AmbientMode時はHandlerが停止しているのでこちらで更新する
-        adapter.notifyDataSetChanged();
+        adapter.notifyDataSetChanged(true);
         Log.i("Auth2", "Key Updated.");
     }
 
@@ -160,6 +163,7 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
      */
     private class CardPagerAdapter extends FragmentGridPagerAdapter {
         private List<TotpModel> models = new ArrayList<>();
+        private boolean ambient = false;
 
         public CardPagerAdapter(FragmentManager fm) {
             super(fm);
@@ -183,10 +187,19 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
             notifyDataSetChanged();
         }
 
+        /**
+         * AmbientModeを指定してリストを更新します
+         * @param ambient AmbientMode
+         */
+        public void notifyDataSetChanged(boolean ambient) {
+            this.ambient = ambient;
+            notifyDataSetChanged();
+        }
+
         @Override
         public Fragment getFragment(int row, int column) {
             TotpModel model = this.models.get(row);
-            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey(), model.listOrder);
+            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey(), model.listOrder, ambient);
         }
 
         @Override

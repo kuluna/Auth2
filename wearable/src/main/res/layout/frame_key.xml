@@ -11,7 +11,7 @@
         android:fontFamily="sans-serif-light"
         android:lines="2"
         android:maxLines="2"
-        android:textColor="#666"
+        android:textColor="#777"
         tools:text="account" />
 
     <ImageView
@@ -29,7 +29,7 @@
         android:layout_below="@+id/card_account"
         android:layout_centerHorizontal="true"
         android:fontFamily="sans-serif-thin"
-        android:textColor="@color/brandcolor_primary"
+        android:textColor="@color/brandcolor_accent"
         android:textSize="32sp"
         tools:text="123456" />
 </RelativeLayout>

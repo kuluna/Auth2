@@ -17,16 +17,19 @@ public class TotpCardFragment extends CardFragment {
 
     /**
      * インスタンスを生成します
+     *
      * @param accountId アカウント名
-     * @param authKey 6ケタの認証キー
-     * @return {@link app.kuluna.jp.auth2.TotpCardFragment}
+     * @param authKey   6ケタの認証キー
+     * @param ambient   AmbientMode
+     * @return {@link TotpCardFragment}
      */
-    public static TotpCardFragment newInstance(String accountId, String authKey, int listOrder) {
+    public static TotpCardFragment newInstance(String accountId, String authKey, int listOrder, boolean ambient) {
         TotpCardFragment f = new TotpCardFragment();
         Bundle args = new Bundle();
         args.putString("accountid", accountId);
         args.putString("authkey", authKey);
         args.putInt("listorder", listOrder);
+        args.putBoolean("ambient", ambient);
         f.setArguments(args);
         return f;
     }
@@ -45,7 +48,14 @@ public class TotpCardFragment extends CardFragment {
 
         Bundle args = getArguments();
         View v = getView();
-        rootView.setBackground(defaultCardDrawable);
+
+        // AmbientModeかどうかでカードの背景色を変える
+        if (args.getBoolean("ambient", false)) {
+            rootView.setBackgroundColor(getResources().getColor(android.R.color.black));
+        } else {
+            rootView.setBackground(defaultCardDrawable);
+        }
+
         ((TextView) v.findViewById(R.id.card_account)).setText(args.getString("accountid"));
         ((TextView) v.findViewById(R.id.card_authkey)).setText(args.getString("authkey"));
         if (args.getInt("listorder") > 0) {
@@ -53,13 +63,5 @@ public class TotpCardFragment extends CardFragment {
         } else {
             v.findViewById(R.id.card_star).setVisibility(View.GONE);
         }
-    }
-
-    public void startAmbientMode() {
-
-    }
-
-    public void endAmbientMode() {
-
     }
 }
