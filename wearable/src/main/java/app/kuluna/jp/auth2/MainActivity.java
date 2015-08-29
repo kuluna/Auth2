@@ -118,6 +118,10 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         FanView fanView = (FanView) findViewById(R.id.fanview);
         fanView.setVisibility(View.INVISIBLE);
         fanView.stopDraw();
+        // Auth2だとわかりやすいようアプリアイコンを表示する
+        findViewById(R.id.appicon).setVisibility(View.VISIBLE);
+
+        // データ表示をAmbientModeに切り替え
         adapter.notifyDataSetChanged(true);
     }
 
@@ -127,6 +131,10 @@ public class MainActivity extends WearableActivity implements GoogleApiClient.Co
         FanView fanView = (FanView) findViewById(R.id.fanview);
         fanView.setVisibility(View.VISIBLE);
         fanView.startDraw();
+        // アプリアイコンを非表示
+        findViewById(R.id.appicon).setVisibility(View.INVISIBLE);
+
+        // データ表示を通常モードに切り替え
         adapter.notifyDataSetChanged(false);
 
         super.onExitAmbient();
