@@ -1,5 +1,6 @@
 package app.kuluna.jp.auth2;
 
+import android.net.Uri;
 import android.util.Log;
 
 import org.jboss.aerogear.security.otp.Totp;
@@ -30,21 +31,6 @@ public class TotpModel {
      * コンストラクタ
      */
     public TotpModel() {
-    }
-
-    /**
-     * コンストラクタ
-     *
-     * @param accountId サービス名
-     * @param secret    アカウント名
-     * @param issuer    secret キー
-     * @param listOrder リスト表示順
-     */
-    public TotpModel(String accountId, String secret, String issuer, int listOrder) {
-        this.accountId = accountId;
-        this.secret = secret;
-        this.issuer = issuer;
-        this.listOrder = listOrder;
     }
 
     /**

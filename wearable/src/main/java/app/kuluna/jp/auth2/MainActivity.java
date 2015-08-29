@@ -1,14 +1,15 @@
 package app.kuluna.jp.auth2;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -20,25 +21,32 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Auth2(Wear) メインアクティビティ
  */
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
+public class MainActivity extends WearableActivity implements GoogleApiClient.ConnectionCallbacks {
     private GoogleApiClient googleApiClient;
     private CardPagerAdapter adapter;
+    private UpdateHandler updateHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        // AmbientModeを有効にする
+        setAmbientEnabled();
+        // キーを表示するカードを設置する
         final GridViewPager gridViewPager = (GridViewPager) findViewById(R.id.gridviewpager);
         adapter = new CardPagerAdapter(getFragmentManager());
         gridViewPager.setAdapter(adapter);
+        // 1分毎に実行するHandlerのセットアップ
+        updateHandler = new UpdateHandler(this);
 
+        // Google Play Serviceクライアント
         googleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
     }
 
@@ -52,7 +60,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             googleApiClient.connect();
         }
 
-        h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
+        // 1分毎にキーを更新
+        updateHandler.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
     }
 
     /**
@@ -68,7 +77,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         // 送られてきたTOTPデータを受け取る
                         DataMap data = DataMap.fromByteArray(item.getData());
                         // JsoNからデシリアライズ
-                        List<TotpModel> models = new Gson().fromJson(data.getString("Totp"), new TypeToken<List<TotpModel>>() {}.getType());
+                        List<TotpModel> models = new Gson().fromJson(data.getString("Totp"), new TypeToken<List<TotpModel>>() {
+                        }.getType());
                         // リストに追加
                         adapter.addAll(models);
 
@@ -92,7 +102,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             googleApiClient.disconnect();
         }
 
-        h.removeMessages(0);
+        // キーの更新を止める
+        updateHandler.removeMessages(0);
     }
 
     // 使わない
@@ -100,22 +111,67 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onConnectionSuspended(int i) {
     }
 
-    private Handler h = new Handler() {
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+        // AmbientMode時はFanViewを停止する
+        FanView fanView = (FanView) findViewById(R.id.fanview);
+        fanView.setVisibility(View.INVISIBLE);
+        fanView.stopDraw();
+        // Auth2だとわかりやすいようアプリアイコンを表示する
+        findViewById(R.id.appicon).setVisibility(View.VISIBLE);
+
+        // データ表示をAmbientModeに切り替え
+        adapter.notifyDataSetChanged(true);
+    }
+
+    @Override
+    public void onExitAmbient() {
+        // 通常モードに戻った時FanViewを再開する
+        FanView fanView = (FanView) findViewById(R.id.fanview);
+        fanView.setVisibility(View.VISIBLE);
+        fanView.startDraw();
+        // アプリアイコンを非表示
+        findViewById(R.id.appicon).setVisibility(View.INVISIBLE);
+
+        // データ表示を通常モードに切り替え
+        adapter.notifyDataSetChanged(false);
+
+        super.onExitAmbient();
+    }
+
+    @Override
+    public void onUpdateAmbient() {
+        super.onUpdateAmbient();
+        // AmbientMode時はHandlerが停止しているのでこちらで更新する
+        adapter.notifyDataSetChanged(true);
+        Log.i("Auth2", "Key Updated.");
+    }
+
+    /**
+     * 1分毎にキーを更新するHandler
+     */
+    private static class UpdateHandler extends Handler {
+        private final WeakReference<MainActivity> activity;
+
+        public UpdateHandler(MainActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
         @Override
         public void handleMessage(Message msg) {
-            // 1分後に再更新
-            h.sendEmptyMessageDelayed(0, CUtil.justZeroSecond());
-            adapter.notifyDataSetChanged();
+            sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
+            activity.get().adapter.notifyDataSetChanged();
             Log.i("Auth2", "Key Updated.");
         }
-    };
-
+    }
 
     /**
      * GridViewPagerにTOTPキーを表示するためのAdapter
      */
     private class CardPagerAdapter extends FragmentGridPagerAdapter {
         private List<TotpModel> models = new ArrayList<>();
+        private boolean ambient = false;
 
         public CardPagerAdapter(FragmentManager fm) {
             super(fm);
@@ -139,10 +195,19 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             notifyDataSetChanged();
         }
 
+        /**
+         * AmbientModeを指定してリストを更新します
+         * @param ambient AmbientMode
+         */
+        public void notifyDataSetChanged(boolean ambient) {
+            this.ambient = ambient;
+            notifyDataSetChanged();
+        }
+
         @Override
         public Fragment getFragment(int row, int column) {
             TotpModel model = this.models.get(row);
-            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey(), model.listOrder);
+            return TotpCardFragment.newInstance(model.accountId, model.getAuthKey(), model.listOrder, ambient);
         }
 
         @Override
