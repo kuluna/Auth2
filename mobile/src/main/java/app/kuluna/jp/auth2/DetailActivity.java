@@ -23,6 +23,8 @@ import android.widget.Toast;
 
 import com.activeandroid.query.Select;
 
+import java.lang.ref.WeakReference;
+
 /**
  * TOTPキーの詳細を表示するActivity
  */
@@ -32,6 +34,7 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
      */
     private static final int BACK_DIALOG = 20;
 
+    private UpdateHandler updateHandler;
     private TextView textAccountId, textSecret;
     private ImageView imageStar;
     private EditText editAccountId;
@@ -78,6 +81,8 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
 
         // ActionBarにUpボタンの追加
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // 1分毎に更新するためのHandlerセットアップ
+        updateHandler = new UpdateHandler(this);
     }
 
     @Override
@@ -213,17 +218,20 @@ public class DetailActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     /**
-     * 1分置きにキーを更新するHandler
+     * 1分毎にキーを更新するHandler
      */
-    private Handler updateHandler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            // 1分後に再更新
-            updateHandler.sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
+    private static class UpdateHandler extends Handler {
+        private final WeakReference<DetailActivity> activity;
 
-            textSecret.setText(String.valueOf(model.getAuthKey()));
-            copyClipboard();
+        public UpdateHandler(DetailActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            sendEmptyMessageDelayed(msg.what, CUtil.justZeroSecond());
+            activity.get().textSecret.setText(String.valueOf(activity.get().model.getAuthKey()));
             Log.i("Auth2", "Key Updated.");
         }
-    };
+    }
 }
