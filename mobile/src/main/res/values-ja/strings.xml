@@ -16,4 +16,5 @@
     <string name="edit">編集</string>
     <string name="error_encrypt">データの暗号化処理でエラーが発生しました</string>
     <string name="priority">優先度</string>
+    <string name="denied_camera">QRコードを読み取るためにカメラのアクセス許可が必要です</string>
 </resources>

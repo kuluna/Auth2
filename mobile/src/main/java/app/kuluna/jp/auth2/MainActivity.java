@@ -1,12 +1,15 @@
 package app.kuluna.jp.auth2;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -127,10 +130,39 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_add) {
             // ADDメニューが押されたらQRコードアプリを起動してスキャンする
-            IntentIntegrator intent = new IntentIntegrator(this);
-            intent.initiateScan();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                showQRCamera();
+            } else {
+                // カメラの使用が許可されていなければ再度求める
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0);
+            }
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == 0) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // カメラパーミッションが許可された場合
+                showQRCamera();
+            } else {
+                // カメラパーミッションが拒否された場合
+                // 追加できないメッセージを表示する
+                Toast.makeText(this, getString(R.string.denied_camera), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    /**
+     * QRCodeを読み取るカメラ画面を起動します
+     */
+    private void showQRCamera() {
+        // QRコードアプリを起動してスキャンする
+        IntentIntegrator intent = new IntentIntegrator(this);
+        intent.initiateScan();
     }
 
     /**
