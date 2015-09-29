@@ -130,7 +130,12 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_add) {
             // ADDメニューが押されたらQRコードアプリを起動してスキャンする
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                showQRCamera();
+            } else {
+                // カメラの使用が許可されていなければ再度求める
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -140,9 +145,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 0) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // カメラパーミッションが許可された場合
-                // ADDメニューが押されたらQRコードアプリを起動してスキャンする
-                IntentIntegrator intent = new IntentIntegrator(this);
-                intent.initiateScan();
+                showQRCamera();
             } else {
                 // カメラパーミッションが拒否された場合
                 // 追加できないメッセージを表示する
@@ -151,6 +154,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+    }
+
+    /**
+     * QRCodeを読み取るカメラ画面を起動します
+     */
+    private void showQRCamera() {
+        // QRコードアプリを起動してスキャンする
+        IntentIntegrator intent = new IntentIntegrator(this);
+        intent.initiateScan();
     }
 
     /**
