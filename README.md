@@ -4,8 +4,6 @@ Auth2
 ![phone.png](https://bitbucket.org/repo/a9q964/images/3109687799-phone.png)
 ![wear.png](https://bitbucket.org/repo/a9q964/images/453386965-wear.png)
 
-Sorry, this document is Japanese ONLY.
-
 Auth2はGoogleやDropboxが採用している2段階認証に使用する数字6けたのキーを生成するアプリです。  
 
 ## 動作環境
