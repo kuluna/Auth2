@@ -1,15 +1,16 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 27
 
     defaultConfig {
         applicationId "app.kuluna.jp.auth2"
         minSdkVersion 18
-        targetSdkVersion 23
+        targetSdkVersion 27
         versionCode 10
         versionName "1.3.1"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     packagingOptions {
@@ -38,16 +39,17 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     wearApp project(':wearable')
-    compile 'com.google.android.gms:play-services-wearable:8.3.0'
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.android.support:cardview-v7:23.1.1'
-    compile 'com.android.support:recyclerview-v7:23.1.1'
-    compile 'org.jboss.aerogear:aerogear-otp-java:1.0.0'
-    compile 'com.journeyapps:zxing-android-embedded:3.0.2@aar'
-    compile 'com.google.zxing:core:3.2.0'
-    compile 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
-    compile 'org.jdeferred:jdeferred-android-aar:1.2.4'
-    compile 'com.scottyab:aescrypt:0.0.1'
+    implementation"org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation 'com.google.android.gms:play-services-wearable:11.8.0'
+    implementation 'com.android.support:support-v4:27.1.0'
+    implementation 'com.android.support:appcompat-v7:27.1.0'
+    implementation 'com.android.support:cardview-v7:27.1.0'
+    implementation 'com.android.support:recyclerview-v7:27.1.0'
+    implementation 'org.jboss.aerogear:aerogear-otp-java:1.0.0'
+    implementation 'com.journeyapps:zxing-android-embedded:3.5.0@aar'
+    implementation 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
+    implementation 'org.jdeferred:jdeferred-android-aar:1.2.4'
+    implementation 'com.scottyab:aescrypt:0.0.1'
 }
