@@ -1,1 +1,0 @@
-alter table totp add column list_order integer not null default 0;

@@ -1,20 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Auth2</string>
-    <string name="action_add">Add</string>
-    <string name="action_del">Del</string>
-    <string name="copied">Copied.</string>
-    <string name="confirm_delete">Delete Token?</string>
-    <string name="cancel">Cancel</string>
-    <string name="error_uri">Sorry, TOTP Only</string>
-    <string name="edit">Edit</string>
-    <string name="auth2id">Auth2 ID</string>
-    <string name="accountid">Account ID</string>
-    <string name="issuer">Issuer</string>
-    <string name="apply">Apply</string>
-    <string name="error_auth2id">Sorry, data not found</string>
-    <string name="error_textfilter">Please do not use \'[\' and \']\'</string>
-    <string name="error_encrypt">Sorry, Data encrypt ERROR!</string>
-    <string name="priority">Priority</string>
-    <string name="denied_camera">Auth2 required CAMERA to shoot the QR code.</string>
 </resources>
