@@ -1,4 +1,4 @@
-package jp.kuluna.auth2
+package app.kuluna.jp.auth2
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4

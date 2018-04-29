@@ -1,4 +1,4 @@
-package jp.kuluna.auth2
+package app.kuluna.jp.auth2
 
 import android.os.Bundle
 import android.support.wearable.activity.WearableActivity
