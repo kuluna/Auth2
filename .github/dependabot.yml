@@ -1,0 +1,13 @@
+version: 2
+updates:
+- package-ecosystem: gradle
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "07:00"
+    timezone: Japan
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: com.journeyapps:zxing-android-embedded
+    versions:
+    - 4.1.0
